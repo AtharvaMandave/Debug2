@@ -26,7 +26,8 @@ TASK: Provide a comprehensive, helpful answer to the user's question. Consider:
 - Specific answers to the user's question
 
 RESPONSE FORMAT:
-Return ONLY a valid JSON object with this structure:
+You MUST respond with ONLY a valid JSON object. No markdown, no explanations, no code blocks, no additional text.
+
 {
   "answer": "Comprehensive answer to the user's question",
   "codeSuggestion": "optional improved code if relevant",
@@ -45,8 +46,12 @@ IMPORTANT GUIDELINES:
 - Use clear, non-technical language when possible
 - Provide code examples when helpful
 - Be encouraging and constructive
+- ALWAYS respond with valid JSON only
+- Use double quotes for all strings
+- Escape any quotes within strings with backslash
+- Do not include any text before or after the JSON
 
-CRITICAL: Respond ONLY with the JSON object. No markdown, no explanations, no code blocks.`;
+CRITICAL: Respond ONLY with the JSON object. No markdown, no explanations, no code blocks. Start with { and end with }. The response must be valid JSON that can be parsed by JSON.parse().`;
 
     const geminiRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + process.env.GEMINI_API_KEY, {
       method: 'POST',

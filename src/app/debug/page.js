@@ -20,6 +20,32 @@ import GitHubAnalyzer from '../../components/GitHubAnalyzer';
 export default function DebugPage() {
   const { dark, setDark } = useTheme();
   const { isSignedIn } = useUser();
+  
+  // Early return for authentication - must happen before any other hooks
+  if (!isSignedIn) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        <div className="relative p-12 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl text-center">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-6">
+            🤖
+          </div>
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+            Sign in to Access AI Debugger
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md">
+            Unlock the full power of AI-powered code analysis, debugging, and visualization.
+          </p>
+          <SignInButton>
+            <button className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white font-bold text-lg shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105">
+              Get Started
+            </button>
+          </SignInButton>
+        </div>
+      </div>
+    );
+  }
+
+  // All hooks must be called after the early return to maintain consistent order
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [aiResponse, setAiResponse] = useState(null);
@@ -70,29 +96,6 @@ export default function DebugPage() {
   const [showPredictiveDebugger, setShowPredictiveDebugger] = useState(false);
   const [showGitHubAnalyzer, setShowGitHubAnalyzer] = useState(false);
   const [isListening, setIsListening] = useState(false);
-
-  if (!isSignedIn) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="relative p-12 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl text-center">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-6">
-            🤖
-          </div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-            Sign in to Access AI Debugger
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md">
-            Unlock the full power of AI-powered code analysis, debugging, and visualization.
-          </p>
-          <SignInButton>
-            <button className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white font-bold text-lg shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105">
-              Get Started
-            </button>
-          </SignInButton>
-        </div>
-      </div>
-    );
-  }
 
   const handleAnalyze = async (e, customLevel) => {
     e && e.preventDefault();
@@ -295,7 +298,6 @@ export default function DebugPage() {
         showToast('Invalid algorithm visualization data', 'error');
         return;
       }
-      
       setAlgorithmVisualization(data);
       showToast(`Algorithm visualization ready! Found ${data.animationSteps.length} steps.`, 'success');
     } catch (err) {
@@ -341,6 +343,7 @@ export default function DebugPage() {
   };
 
   const handleApplyFix = async (suggestedFix) => {
+    console.log('handleApplyFix called with:', suggestedFix);
     try {
       // Extract actual code fix from the suggested fix text
       let actualFix = suggestedFix;
@@ -405,73 +408,69 @@ export default function DebugPage() {
       const currentCode = code;
       let fixedCode = currentCode;
       
-      // Common surgical fixes
-      if (actualFix.includes('print(') && currentCode.includes('print(')) {
-        // Fix print statements
-        const printRegex = /print\([^)]*\)/g;
-        if (printRegex.test(currentCode)) {
-          fixedCode = currentCode.replace(printRegex, actualFix);
-        }
-      } else if (actualFix.includes('console.log(') && currentCode.includes('console.log(')) {
-        // Fix console.log statements
-        const consoleRegex = /console\.log\([^)]*\)/g;
-        if (consoleRegex.test(currentCode)) {
-          fixedCode = currentCode.replace(consoleRegex, actualFix);
-        }
-      } else if (actualFix.includes('=') && currentCode.includes('=')) {
-        // Fix variable assignments
-        const assignmentRegex = /[a-zA-Z_][a-zA-Z0-9_]*\s*=\s*[^;\n]*/g;
-        if (assignmentRegex.test(currentCode)) {
-          // Find the specific variable being assigned
-          const varMatch = actualFix.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*=/);
-          if (varMatch) {
-            const varName = varMatch[1];
-            const specificAssignmentRegex = new RegExp(`${varName}\\s*=\\s*[^;\\n]*`, 'g');
-            fixedCode = currentCode.replace(specificAssignmentRegex, actualFix);
-          }
-        }
-      } else if (actualFix.includes('function') && currentCode.includes('function')) {
-        // Fix function definitions
-        const functionRegex = /function\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*{[^}]*}/g;
-        if (functionRegex.test(currentCode)) {
-          fixedCode = currentCode.replace(functionRegex, actualFix);
-        }
-      } else if (actualFix.includes('def ') && currentCode.includes('def ')) {
-        // Fix Python function definitions
-        const defRegex = /def\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*:/g;
-        if (defRegex.test(currentCode)) {
-          fixedCode = currentCode.replace(defRegex, actualFix);
-        }
+      // Check if the suggested fix is a complete code replacement
+      if (actualFix.includes('public class') || actualFix.includes('function') || actualFix.includes('def ')) {
+        // If it looks like a complete code block, use it directly
+        console.log('Using complete code replacement');
+        fixedCode = actualFix;
       } else {
-        // If no specific pattern matches, try to find and replace the problematic line
-        const lines = currentCode.split('\n');
-        const fixedLines = lines.map(line => {
-          // Check if this line contains the problematic pattern
-          if (line.includes('print(') && actualFix.includes('print(')) {
-            return actualFix;
-          } else if (line.includes('console.log(') && actualFix.includes('console.log(')) {
-            return actualFix;
-          } else if (line.includes('=') && actualFix.includes('=')) {
-            // Check if it's the same variable assignment
-            const lineVarMatch = line.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*=/);
-            const fixVarMatch = actualFix.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*=/);
-            if (lineVarMatch && fixVarMatch && lineVarMatch[1] === fixVarMatch[1]) {
-              return actualFix;
+        // Try surgical fixes for specific patterns
+        if (actualFix.includes('for (int i = 0; i < n; i++)') && currentCode.includes('for (int i = 0; i <= n; i++)')) {
+          // Fix the specific Java loop condition
+          fixedCode = currentCode.replace(/for \(int i = 0; i <= n; i\+\+\)/g, 'for (int i = 0; i < n; i++)');
+        } else if (actualFix.includes('print(') && currentCode.includes('print(')) {
+          // Fix print statements
+          const printRegex = /print\([^)]*\)/g;
+          if (printRegex.test(currentCode)) {
+            fixedCode = currentCode.replace(printRegex, actualFix);
+          }
+        } else if (actualFix.includes('console.log(') && currentCode.includes('console.log(')) {
+          // Fix console.log statements
+          const consoleRegex = /console\.log\([^)]*\)/g;
+          if (consoleRegex.test(currentCode)) {
+            fixedCode = currentCode.replace(consoleRegex, actualFix);
+          }
+        } else if (actualFix.includes('=') && currentCode.includes('=')) {
+          // Fix variable assignments
+          const assignmentRegex = /[a-zA-Z_][a-zA-Z0-9_]*\s*=\s*[^;\n]*/g;
+          if (assignmentRegex.test(currentCode)) {
+            // Find the specific variable being assigned
+            const varMatch = actualFix.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*=/);
+            if (varMatch) {
+              const varName = varMatch[1];
+              const specificAssignmentRegex = new RegExp(`${varName}\\s*=\\s*[^;\\n]*`, 'g');
+              fixedCode = currentCode.replace(specificAssignmentRegex, actualFix);
             }
           }
-          return line;
-        });
-        fixedCode = fixedLines.join('\n');
+        } else {
+          // If no specific pattern matches, try to find and replace the problematic line
+          const lines = currentCode.split('\n');
+          const fixedLines = lines.map(line => {
+            // Check if this line contains the problematic pattern
+            if (line.includes('print(') && actualFix.includes('print(')) {
+              return actualFix;
+            } else if (line.includes('console.log(') && actualFix.includes('console.log(')) {
+              return actualFix;
+            } else if (line.includes('=') && actualFix.includes('=')) {
+              // Check if it's the same variable assignment
+              const lineVarMatch = line.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*=/);
+              const fixVarMatch = actualFix.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*=/);
+              if (lineVarMatch && fixVarMatch && lineVarMatch[1] === fixVarMatch[1]) {
+                return actualFix;
+              }
+            }
+            return line;
+          });
+          fixedCode = fixedLines.join('\n');
+        }
       }
       
       // Apply the surgical fix
+      console.log('Current code:', code);
+      console.log('Fixed code:', fixedCode);
+      console.log('Are they different?', code !== fixedCode);
       setCode(fixedCode);
       showToast('✅ Fix applied successfully!', 'success');
-      
-      // Optionally re-analyze the code to show the fixed version
-      setTimeout(() => {
-        handleAnalyze(null);
-      }, 1000);
     } catch (error) {
       console.error('Failed to apply fix:', error);
       showToast('❌ Failed to apply fix. Please try again.', 'error');
@@ -721,7 +720,7 @@ export default function DebugPage() {
             </div>
 
             {/* Additional Tools */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button
                 type="button"
                 className="p-3 rounded-xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white font-semibold shadow-lg hover:shadow-orange-500/25 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -775,10 +774,10 @@ export default function DebugPage() {
                   )}
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* AI-Powered Features */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               <button
                 type="button"
                 className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105"
@@ -833,7 +832,7 @@ export default function DebugPage() {
                   <span className="text-sm">GitHub Repo</span>
                 </div>
               </button>
-            </div>
+            </div> */}
 
             {/* Complexity Analyzer Display */}
             {showComplexity && (
@@ -948,19 +947,19 @@ export default function DebugPage() {
               />
             )}
 
-            {showPredictiveDebugger && (
+            {/* {showPredictiveDebugger && (
               <PredictiveDebugger 
                 currentCode={code}
                 language={language}
                 onPredictions={handlePredictions}
               />
-            )}
+            )} */}
 
-            {showGitHubAnalyzer && (
+            {/* {showGitHubAnalyzer && (
               <GitHubAnalyzer 
                 onAnalysisComplete={handleGitHubAnalysis}
               />
-            )}
+            )} */}
 
             {/* Error Display */}
             {error && (

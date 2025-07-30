@@ -24,17 +24,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
-      <ClientLayout>
-        <html lang="en" className="scroll-smooth">
-          <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className="scroll-smooth">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ClerkProvider>
+          <ClientLayout>
             <Navbar />
             <main className="pt-16">
               {children}
             </main>
-          </body>
-        </html>
-      </ClientLayout>
-    </ClerkProvider>
+          </ClientLayout>
+        </ClerkProvider>
+      </body>
+    </html>
   )
 }

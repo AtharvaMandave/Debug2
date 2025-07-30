@@ -45,31 +45,20 @@ function extractJsonFromMarkdown(content) {
 // Enhanced JSON parsing with multiple fallback strategies
 function parseJsonRobustly(jsonText, fallbackData = null) {
   if (!jsonText) {
-    console.log('No JSON text provided, using fallback data');
     return fallbackData;
   }
-
-  // Debug logging
-  console.log('JSON text length:', jsonText.length);
-  console.log('JSON text preview:', jsonText.substring(0, 200));
 
   // First attempt: direct parsing
   try {
     const result = JSON.parse(jsonText);
-    console.log('JSON parse successful on first attempt');
     return result;
   } catch (parseError) {
-    console.log('Initial JSON parse failed, attempting to clean...');
-    
     // Second attempt: remove control characters
     try {
       let cleanedJson = jsonText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
       const result = JSON.parse(cleanedJson);
-      console.log('JSON parse successful after cleaning control characters');
       return result;
     } catch (secondError) {
-      console.log('Second parse attempt failed:', secondError.message);
-      
       // Third attempt: more aggressive cleaning
       try {
         // Remove any text before the first {
@@ -93,37 +82,25 @@ function parseJsonRobustly(jsonText, fallbackData = null) {
         jsonText = jsonText.replace(/([^"\\])\s*\n\s*([^"\\])/g, '$1 $2'); // Remove newlines between properties
         jsonText = jsonText.replace(/\s+/g, ' '); // Normalize whitespace
         
-        console.log('Cleaned JSON preview:', jsonText.substring(0, 300));
-        
         const result = JSON.parse(jsonText);
-        console.log('JSON parse successful after aggressive cleaning');
         return result;
       } catch (thirdError) {
-        console.log('Third parse attempt failed:', thirdError.message);
-        
         // Fourth attempt: manual extraction
         try {
           const result = extractBasicStructure(jsonText);
           if (result) {
-            console.log('Manual extraction successful');
             return result;
           } else {
             throw new Error('Manual extraction failed');
           }
         } catch (extractError) {
-          console.log('Manual extraction failed:', extractError.message);
-          
           // Fifth attempt: try to fix common JSON issues
           try {
             const fixedJson = fixCommonJsonIssues(jsonText);
             const result = JSON.parse(fixedJson);
-            console.log('JSON parse successful after fixing common issues');
             return result;
           } catch (fixError) {
-            console.log('Fix attempt failed:', fixError.message);
-            
             // Final fallback
-            console.log('Using fallback data');
             return fallbackData;
           }
         }
@@ -173,7 +150,14 @@ function extractBasicStructure(jsonText) {
     { name: 'issues', pattern: /"issues":\s*\[/ },
     { name: 'suggested_fix', pattern: /"suggested_fix":\s*"([^"]*(?:\\.[^"]*)*)"/ },
     { name: 'line_by_line', pattern: /"line_by_line":\s*\{/ },
-    { name: 'images', pattern: /"images":\s*\[/ }
+    { name: 'images', pattern: /"images":\s*\[/ },
+    // Natural language query specific fields
+    { name: 'answer', pattern: /"answer":\s*"([^"]*(?:\\.[^"]*)*)"/ },
+    { name: 'codeSuggestion', pattern: /"codeSuggestion":\s*"([^"]*(?:\\.[^"]*)*)"/ },
+    { name: 'explanation', pattern: /"explanation":\s*"([^"]*(?:\\.[^"]*)*)"/ },
+    { name: 'confidence', pattern: /"confidence":\s*"([^"]+)"/ },
+    { name: 'relatedTopics', pattern: /"relatedTopics":\s*\[/ },
+    { name: 'nextSteps', pattern: /"nextSteps":\s*\[/ }
   ];
 
   const extractedData = {};
@@ -185,8 +169,10 @@ function extractBasicStructure(jsonText) {
         extractedData[field.name] = match[1] === 'true';
       } else if (field.name === 'totalSteps') {
         extractedData[field.name] = parseInt(match[1]);
-      } else if (field.name === 'explanation' || field.name === 'suggested_fix') {
+      } else if (field.name === 'explanation' || field.name === 'suggested_fix' || field.name === 'answer' || field.name === 'codeSuggestion') {
         extractedData[field.name] = match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+      } else if (field.name === 'confidence') {
+        extractedData[field.name] = match[1];
       } else {
         // For complex objects, just indicate they exist
         extractedData[field.name] = field.name === 'timeline' ? [] : 
@@ -196,7 +182,9 @@ function extractBasicStructure(jsonText) {
                                    field.name === 'edges' ? [] :
                                    field.name === 'issues' ? [] :
                                    field.name === 'line_by_line' ? {} :
-                                   field.name === 'images' ? [] : true;
+                                   field.name === 'images' ? [] :
+                                   field.name === 'relatedTopics' ? [] :
+                                   field.name === 'nextSteps' ? [] : true;
       }
     }
   }
@@ -215,8 +203,6 @@ function truncateJsonIfNeeded(jsonText, maxSize = 8000) {
     return jsonText;
   }
 
-  console.log(`JSON too large (${jsonText.length} chars), truncating...`);
-  
   // First, try to find a complete timeline array
   const timelineStart = jsonText.indexOf('"timeline":');
   if (timelineStart > 0) {
@@ -237,7 +223,6 @@ function truncateJsonIfNeeded(jsonText, maxSize = 8000) {
       
       if (lastMatch) {
         const truncated = jsonText.substring(0, lastMatch.index + 1) + ']';
-        console.log('Truncated at complete step, length:', truncated.length);
         return truncated;
       }
     }
@@ -260,7 +245,6 @@ function truncateJsonIfNeeded(jsonText, maxSize = 8000) {
     truncated += '}';
   }
   
-  console.log('Truncated with bracket closure, length:', truncated.length);
   return truncated;
 }
 

@@ -42,6 +42,8 @@ export default function Explanation({ aiResponse, onApplyFix }) {
   const [applyingFix, setApplyingFix] = useState(false);
   const synthRef = useRef(null);
 
+
+
   const handlePlayExplanation = () => {
     if (!explanation) return;
     if (isPlaying) {
@@ -79,6 +81,9 @@ export default function Explanation({ aiResponse, onApplyFix }) {
       setApplyingFix(false);
     }
   };
+
+  // Determine if we should show the auto apply button
+  const shouldShowAutoApply = (bugs_detected || (issues && issues.length > 0)) && suggested_fix && onApplyFix;
 
   return (
     <div className="bg-white dark:bg-zinc-900/80 p-6 rounded-xl shadow-lg w-full max-w-2xl ml-0 md:ml-8 mt-6 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-white">
@@ -218,8 +223,8 @@ export default function Explanation({ aiResponse, onApplyFix }) {
                 <code>{suggested_fix}</code>
               </pre>
             </div>
-            {/* Auto Apply Button - Only show when bugs are detected and fix is available */}
-            {bugs_detected && onApplyFix && (
+            {/* Auto Apply Button - Show when issues are detected and fix is available */}
+            {shouldShowAutoApply && (
               <div className="px-4 pb-4">
                 <button
                   onClick={handleAutoApplyFix}

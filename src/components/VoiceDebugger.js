@@ -14,12 +14,24 @@ const VOICE_COMMANDS = {
 };
 
 export default function VoiceDebugger({ onVoiceCommand, isListening, setIsListening, currentCode }) {
-  const [isRecording, setIsRecording] = useState(false);
+  // Validate required props
+  if (typeof onVoiceCommand !== 'function') {
+    console.error('VoiceDebugger: onVoiceCommand prop is required and must be a function');
+    return null;
+  }
+
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState('');
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
+
+  // Ensure setIsListening is a function
+  const safeSetIsListening = (value) => {
+    if (typeof setIsListening === 'function') {
+      setIsListening(value);
+    }
+  };
 
   useEffect(() => {
     // Check if speech recognition is supported
@@ -33,7 +45,7 @@ export default function VoiceDebugger({ onVoiceCommand, isListening, setIsListen
       recognitionRef.current.lang = 'en-US';
       
       recognitionRef.current.onstart = () => {
-        setIsRecording(true);
+        safeSetIsListening(true);
         setError('');
       };
       
@@ -67,11 +79,11 @@ export default function VoiceDebugger({ onVoiceCommand, isListening, setIsListen
       
       recognitionRef.current.onerror = (event) => {
         setError(`Speech recognition error: ${event.error}`);
-        setIsRecording(false);
+        safeSetIsListening(false);
       };
       
       recognitionRef.current.onend = () => {
-        setIsRecording(false);
+        safeSetIsListening(false);
       };
     } else {
       setError('Speech recognition is not supported in this browser');
@@ -102,16 +114,34 @@ export default function VoiceDebugger({ onVoiceCommand, isListening, setIsListen
   };
 
   const startListening = () => {
-    if (recognitionRef.current && !isRecording) {
-      recognitionRef.current.start();
-      speakResponse('Listening for voice commands');
+    if (recognitionRef.current && !isListening) {
+      try {
+        // Check for microphone permission
+        if (navigator.permissions) {
+          navigator.permissions.query({ name: 'microphone' }).then((result) => {
+            if (result.state === 'denied') {
+              setError('Microphone access is denied. Please allow microphone access in your browser settings.');
+              return;
+            }
+          });
+        }
+        
+        recognitionRef.current.start();
+        speakResponse('Listening for voice commands');
+      } catch (error) {
+        setError(`Failed to start listening: ${error.message}`);
+      }
     }
   };
 
   const stopListening = () => {
-    if (recognitionRef.current && isRecording) {
-      recognitionRef.current.stop();
-      speakResponse('Stopped listening');
+    if (recognitionRef.current && isListening) {
+      try {
+        recognitionRef.current.stop();
+        speakResponse('Stopped listening');
+      } catch (error) {
+        setError(`Failed to stop listening: ${error.message}`);
+      }
     }
   };
 
@@ -166,20 +196,20 @@ export default function VoiceDebugger({ onVoiceCommand, isListening, setIsListen
       {/* Voice Controls */}
       <div className="flex items-center gap-4 mb-4">
         <button
-          onClick={isRecording ? stopListening : startListening}
+          onClick={isListening ? stopListening : startListening}
           className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-bold transition-all duration-300 ${
-            isRecording
+            isListening
               ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg hover:shadow-red-500/25'
               : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-blue-500/25'
           } hover:scale-105`}
         >
           <div className={`w-6 h-6 rounded-full ${
-            isRecording ? 'bg-red-400 animate-pulse' : 'bg-white'
+            isListening ? 'bg-red-400 animate-pulse' : 'bg-white'
           }`}></div>
-          {isRecording ? '🛑 Stop Listening' : '🎤 Start Listening'}
+          {isListening ? '🛑 Stop Listening' : '🎤 Start Listening'}
         </button>
         
-        {isRecording && (
+        {isListening && (
           <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
             Listening...

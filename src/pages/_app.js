@@ -1,10 +1,10 @@
-import '../app/globals.css';
-import ClientLayout from '../components/ClientLayout';
+import '../app/globals.css'
+import { ThemeProvider } from '../components/ThemeContext'
 
 export default function MyApp({ Component, pageProps }) {
   return (
-    <ClientLayout>
+    <ThemeProvider>
       <Component {...pageProps} />
-    </ClientLayout>
-  );
+    </ThemeProvider>
+  )
 } 

@@ -66,6 +66,7 @@ export default function AIFeaturesPage() {
 
 console.log(fibonacci(10));`);
   const [language, setLanguage] = useState('javascript');
+  const [isListening, setIsListening] = useState(false);
 
   const handleCodeExtracted = (extractedCode, detectedLanguage) => {
     setCode(extractedCode);
@@ -93,6 +94,43 @@ console.log(fibonacci(10));`);
 
   const activeFeatureData = FEATURES.find(f => f.id === activeFeature);
   const ActiveComponent = activeFeatureData?.component;
+
+  // Render the active component with appropriate props
+  const renderActiveComponent = () => {
+    if (!ActiveComponent) return null;
+
+    const baseProps = {
+      currentCode: code,
+      onCodeExtracted: handleCodeExtracted,
+      onQueryResult: handleQueryResult,
+      onPredictions: handlePredictions,
+      onAnalysisComplete: handleGitHubAnalysis
+    };
+
+    // Add voice-specific props for VoiceDebugger
+    if (activeFeature === 'voice') {
+      return (
+        <ActiveComponent
+          {...baseProps}
+          onVoiceCommand={handleVoiceCommand}
+          isListening={isListening}
+          setIsListening={setIsListening}
+        />
+      );
+    }
+
+    // For other components, add voice command handler if they support it
+    if (activeFeature === 'screenshot') {
+      return (
+        <ActiveComponent
+          {...baseProps}
+          onVoiceCommand={handleVoiceCommand}
+        />
+      );
+    }
+
+    return <ActiveComponent {...baseProps} />;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-all duration-700">
@@ -166,16 +204,7 @@ console.log(fibonacci(10));`);
 
           {/* Right: AI Feature Component */}
           <div className="space-y-6">
-            {ActiveComponent && (
-              <ActiveComponent
-                currentCode={code}
-                onVoiceCommand={handleVoiceCommand}
-                onCodeExtracted={handleCodeExtracted}
-                onQueryResult={handleQueryResult}
-                onPredictions={handlePredictions}
-                onAnalysisComplete={handleGitHubAnalysis}
-              />
-            )}
+            {renderActiveComponent()}
           </div>
         </div>
 

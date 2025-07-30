@@ -83,13 +83,12 @@ export default function ConvertPage() {
   }, [sourceCode, sourceLang, targetLang]);
 
   return (
-    
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 py-12 px-4 flex flex-col items-center">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 py-12 px-4 flex flex-col items-center" style={{ minHeight: '100vh' }}>
       <Head>
         <title>Code Translator</title>
       </Head>
-      <div className="w-full max-w-5xl bg-white dark:bg-zinc-800 rounded-2xl shadow-xl p-8">
-        <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Multilingual Code Translator</h1>
+      <div className="w-full max-w-5xl bg-white dark:bg-zinc-800 rounded-2xl shadow-xl p-8" style={{ backgroundColor: 'white', borderRadius: '1rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', padding: '2rem' }}>
+        <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent" style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '1.5rem', background: 'linear-gradient(to right, #2563eb, #9333ea, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Multilingual Code Translator</h1>
         <form className="mb-0">
           <div className="flex gap-4 mb-4">
             <div className="flex-1">

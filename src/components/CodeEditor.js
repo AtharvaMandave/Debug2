@@ -51,6 +51,9 @@ export default function CodeEditor({ value, language, onChange, onLanguageChange
             createEditor();
           });
         };
+        loaderScript.onerror = (error) => {
+          console.error('Failed to load Monaco Editor:', error);
+        };
         document.body.appendChild(loaderScript);
       } else {
         // Loader is already being loaded, wait for it to finish
@@ -65,18 +68,22 @@ export default function CodeEditor({ value, language, onChange, onLanguageChange
       createEditor();
     }
     function createEditor() {
-      if (containerRef.current && !editorRef.current) {
-        editorRef.current = window.monaco.editor.create(containerRef.current, {
-          value: value || '',
-          language: language || 'javascript',
-          theme: 'vs-dark',
-          automaticLayout: true,
-          lineNumbers: 'on',
-        });
-        monacoInstance.current = window.monaco;
-        editorRef.current.onDidChangeModelContent(() => {
-          onChange && onChange(editorRef.current.getValue());
-        });
+      try {
+        if (containerRef.current && !editorRef.current && window.monaco) {
+          editorRef.current = window.monaco.editor.create(containerRef.current, {
+            value: value || '',
+            language: language || 'javascript',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            lineNumbers: 'on',
+          });
+          monacoInstance.current = window.monaco;
+          editorRef.current.onDidChangeModelContent(() => {
+            onChange && onChange(editorRef.current.getValue());
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create Monaco editor:', error);
       }
     }
     return () => {
@@ -149,15 +156,17 @@ export default function CodeEditor({ value, language, onChange, onLanguageChange
   }, [highlightLines]);
 
   // Add highlight style
-  if (typeof window !== 'undefined') {
-    const styleId = 'monaco-highlight-line-style';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.innerHTML = `.monaco-highlight-line { background: rgba(250,204,21,0.25) !important; }`;
-      document.head.appendChild(style);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const styleId = 'monaco-highlight-line-style';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `.monaco-highlight-line { background: rgba(250,204,21,0.25) !important; }`;
+        document.head.appendChild(style);
+      }
     }
-  }
+  }, []);
 
   // Copy code to clipboard
   const handleCopy = async () => {
