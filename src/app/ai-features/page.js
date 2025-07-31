@@ -9,15 +9,15 @@ import CodeEditor from '../../components/CodeEditor';
 import { useTheme } from '../../components/ThemeContext';
 
 const FEATURES = [
-  {
-    id: 'voice',
-    title: '🎤 Voice Debugging',
-    description: 'Use voice commands to debug your code hands-free',
-    icon: '🎤',
-    gradient: 'from-blue-500 to-cyan-500',
-    component: VoiceDebugger,
-    demo: 'Say "debug this" to analyze your code for bugs'
-  },
+  // {
+  //   id: 'voice',
+  //   title: '🎤 Voice Debugging',
+  //   description: 'Use voice commands to debug your code hands-free',
+  //   icon: '🎤',
+  //   gradient: 'from-blue-500 to-cyan-500',
+  //   component: VoiceDebugger,
+  //   demo: 'Say "debug this" to analyze your code for bugs'
+  // },
   {
     id: 'screenshot',
     title: '📸 Screenshot Analysis',
