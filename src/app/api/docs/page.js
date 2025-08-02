@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../components/ThemeContext';
 
 const ENDPOINTS = [
@@ -113,6 +113,14 @@ export default function APIDocsPage() {
   const [testResponse, setTestResponse] = useState(null);
   const [isTesting, setIsTesting] = useState(false);
   const [apiKey, setApiKey] = useState('');
+  const [baseUrl, setBaseUrl] = useState('https://your-domain.com'); // Default fallback
+
+  // Set the base URL after component mounts (client-side only)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
 
   const endpoint = ENDPOINTS[activeEndpoint];
 
@@ -154,7 +162,6 @@ export default function APIDocsPage() {
 
   const generateCurlCommand = () => {
     const endpoint = ENDPOINTS[activeEndpoint];
-    const baseUrl = window.location.origin;
     
     if (endpoint.method === 'GET') {
       return `curl -X GET "${baseUrl}${endpoint.endpoint}"`;
@@ -168,7 +175,6 @@ export default function APIDocsPage() {
 
   const generateJavaScriptExample = () => {
     const endpoint = ENDPOINTS[activeEndpoint];
-    const baseUrl = window.location.origin;
     
     if (endpoint.method === 'GET') {
       return `fetch("${baseUrl}${endpoint.endpoint}")
@@ -442,4 +448,4 @@ export default function APIDocsPage() {
       </main>
     </div>
   );
-} 
+}

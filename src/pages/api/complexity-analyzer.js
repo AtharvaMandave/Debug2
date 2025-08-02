@@ -11,18 +11,17 @@ function extractJsonFromMarkdown(content) {
   if (jsonMatch) {
     content = jsonMatch[0];
   }
-  // Clean up the content - handle escaped characters
   content = content.trim();
   // Replace escaped newlines and quotes that might cause parsing issues
   content = content.replace(/\\n/g, '\n');
   content = content.replace(/\\"/g, '"');
   content = content.replace(/\\\\/g, '\\');
   // Handle control characters that break JSON parsing
-  content = content.replace(/\r/g, ''); // Remove carriage returns
-  content = content.replace(/\t/g, ' '); // Replace tabs with spaces
-  content = content.replace(/\f/g, ''); // Remove form feeds
-  content = content.replace(/\b/g, ''); // Remove backspace characters
-  // Clean up any remaining problematic characters in string literals
+  content = content.replace(/\r/g, ''); 
+  content = content.replace(/\t/g, ' '); 
+  content = content.replace(/\f/g, ''); 
+  content = content.replace(/\b/g, ''); 
+  
   content = content.replace(/(?<="[^"]*)[^\x20-\x7E](?=[^"]*")/g, ' ');
   // Remove trailing commas that cause JSON parsing issues
   content = content.replace(/,(\s*[}\]])/g, '$1');
